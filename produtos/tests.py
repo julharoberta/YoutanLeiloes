@@ -70,6 +70,30 @@ class RegistrarLanceTests(TestCase):
             incremento_minimo=Decimal("1000.00"),
         )
 
+    
+    def test_rejeita_valor_inicial_zero_em_imovel(self):
+        self.imovel.valor_inicial = Decimal("0.00")
+
+        with self.assertRaises(ValidationError):
+            self.imovel.save()
+
+    def test_rejeita_incremento_minimo_negativo_em_imovel(self):
+        self.imovel.incremento_minimo = Decimal("-1.00")
+
+        with self.assertRaises(ValidationError):
+            self.imovel.save()
+
+    def test_normaliza_estado_do_imovel_para_maiusculas(self):
+        self.imovel.estado = "sp"
+        self.imovel.save()
+
+        self.imovel.refresh_from_db()
+        self.assertEqual(self.imovel.estado, "SP")
+
+
+
+
+
         
     def test_rejeita_placa_com_tamanho_invalido(self):
         self.veiculo.placa = "ABC123"
