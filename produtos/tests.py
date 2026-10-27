@@ -17,11 +17,12 @@ class RegistrarLanceTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.instituicao = InstituicaoFinanceira.objects.create(
-    nome="Instituicao de Teste",
-    cnpj="11222333000181",
-)
+            nome="Instituicao de Teste",
+            cnpj="11222333000181",
+        )
 
         agora = timezone.now()
+
         cls.leilao = Leilao.objects.create(
             titulo="Leilao para Testes",
             descricao="Leilao criado automaticamente para testes.",
@@ -54,7 +55,6 @@ class RegistrarLanceTests(TestCase):
             incremento_minimo=Decimal("1000.00"),
         )
 
-        
         cls.veiculo = Veiculo.objects.create(
             leilao=cls.leilao,
             tipo="PASSEIO",
@@ -69,6 +69,8 @@ class RegistrarLanceTests(TestCase):
             valor_inicial=Decimal("50000.00"),
             incremento_minimo=Decimal("1000.00"),
         )
+
+    # Testes de registro de lances
 
     def test_registra_lance_valido(self):
         lance = registrar_lance(
@@ -166,7 +168,8 @@ class RegistrarLanceTests(TestCase):
 
         self.assertEqual(Lance.objects.count(), 1)
 
-        
+    # Testes de transferência de imóveis
+
     def test_bloqueia_transferencia_de_imovel_com_lances(self):
         registrar_lance(
             cliente_id=self.cliente.id,
@@ -202,7 +205,14 @@ class RegistrarLanceTests(TestCase):
             instituicao_financeira=self.instituicao,
         )
 
-        
+        self.imovel.leilao = outro_leilao
+        self.imovel.save()
+
+        self.imovel.refresh_from_db()
+        self.assertEqual(self.imovel.leilao_id, outro_leilao.id)
+
+    # Testes de transferência de veículos
+
     def test_bloqueia_transferencia_de_veiculo_com_lances(self):
         registrar_lance(
             cliente_id=self.cliente.id,
@@ -244,9 +254,35 @@ class RegistrarLanceTests(TestCase):
         self.veiculo.refresh_from_db()
         self.assertEqual(self.veiculo.leilao_id, outro_leilao.id)
 
-        self.imovel.leilao = outro_leilao
-        self.imovel.save()
+    # Testes de validação dos dados do veículo
 
-        self.imovel.refresh_from_db()
-        self.assertEqual(self.imovel.leilao_id, outro_leilao.id)
+    def test_rejeita_chassi_com_tamanho_invalido(self):
+        self.veiculo.chassi = "ABC123"
 
+        with self.assertRaises(ValidationError):
+            self.veiculo.save()
+
+    def test_rejeita_chassi_com_letras_proibidas(self):
+        self.veiculo.chassi = "IOQ12345678901234"
+
+        with self.assertRaises(ValidationError):
+            self.veiculo.save()
+
+    def test_rejeita_ano_modelo_anterior_ao_fabricacao(self):
+        self.veiculo.ano_fabricacao = 2024
+        self.veiculo.ano_modelo = 2023
+
+        with self.assertRaises(ValidationError):
+            self.veiculo.save()
+
+    def test_rejeita_valor_inicial_zero(self):
+        self.veiculo.valor_inicial = Decimal("0.00")
+
+        with self.assertRaises(ValidationError):
+            self.veiculo.save()
+
+    def test_rejeita_incremento_minimo_negativo(self):
+        self.veiculo.incremento_minimo = Decimal("-1.00")
+
+        with self.assertRaises(ValidationError):
+            self.veiculo.save()
