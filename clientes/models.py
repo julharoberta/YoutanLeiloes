@@ -26,10 +26,6 @@ class Cliente(models.Model):
     def clean(self):
         super().clean()
 
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        super().save(*args, **kwargs)
-        
         documento = somente_digitos(self.documento)
 
         if self.tipo_pessoa == "PF":
@@ -49,7 +45,10 @@ class Cliente(models.Model):
                 "tipo_pessoa": "Selecione PF ou PJ."
             })
 
-        self.documento = documento
+    def save(self, *args, **kwargs):
+        self.documento = somente_digitos(self.documento)
+        self.full_clean()
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = "Cliente"

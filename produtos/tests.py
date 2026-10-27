@@ -444,21 +444,27 @@ class ApiLancesTests(APITestCase):
         self.assertEqual(resposta.status_code, 400)
         self.assertEqual(Lance.objects.count(), 0)
 
-    def test_api_consulta_historico_de_lances(self):
-        registrar_lance(
-            cliente_id=self.cliente_teste.id,
-            valor="101000.00",
-            imovel_id=self.imovel_teste.id,
-        )
+    
+def test_api_consulta_historico_de_lances(self):
+    registrar_lance(
+        cliente_id=self.cliente_teste.id,
+        valor="101000.00",
+        imovel_id=self.imovel_teste.id,
+    )
 
-        resposta = self.client.get(
-            "/api/lances/historico/",
-            {"imovel_id": self.imovel_teste.id},
-        )
+    self.client.force_authenticate(user=None)
 
-        self.assertEqual(resposta.status_code, 200)
-        self.assertEqual(len(resposta.data), 1)
-        self.assertEqual(
-            resposta.data[0]["valor"],
-            "101000.00",
-        )
+    resposta = self.client.get(
+        "/api/lances/historico/",
+        {"imovel_id": self.imovel_teste.id},
+    )
+
+    self.assertEqual(resposta.status_code, 200)
+    self.assertEqual(len(resposta.data), 1)
+    self.assertEqual(resposta.data[0]["valor"], "101000.00")
+    self.assertEqual(resposta.data[0]["cliente"], "Cliente API")
+    self.assertEqual(
+        resposta.data[0]["documento"],
+        "***.***.***-25",
+    )
+    self.assertNotIn("52998224725", str(resposta.data))

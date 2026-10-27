@@ -3,12 +3,23 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
 
 from .models import Lance
 from .serializers import LanceEntradaSerializer
 from .services import registrar_lance
+
+
+def mascarar_documento(documento):
+    """Oculta parte do CPF ou CNPJ, preservando apenas os últimos dígitos."""
+    digitos = "".join(caractere for caractere in documento if caractere.isdigit())
+
+    if len(digitos) == 11:
+        return f"***.***.***-{digitos[-2:]}"
+    if len(digitos) == 14:
+        return f"**.***.***/****-{digitos[-2:]}"
+    return "Documento não disponível"
 
 
 @api_view(["POST"])
@@ -57,7 +68,7 @@ def criar_lance(request):
 
 
 @api_view(["GET"])
-@permission_classes([IsAdminUser])
+@permission_classes([AllowAny])
 def historico_lances(request):
     imovel_id = request.query_params.get("imovel_id")
     veiculo_id = request.query_params.get("veiculo_id")
@@ -79,12 +90,17 @@ def historico_lances(request):
         else {"veiculo_id": veiculo_id}
     )
 
-    lances = Lance.objects.filter(**filtros).order_by("id")
+    lances = (
+        Lance.objects.filter(**filtros)
+        .select_related("cliente")
+        .order_by("id")
+    )
 
     resultado = [
         {
             "lance_id": lance.id,
             "cliente": lance.cliente.nome,
+            "documento": mascarar_documento(lance.cliente.documento),
             "valor": str(lance.valor),
             "criado_em": lance.criado_em.isoformat(),
         }
