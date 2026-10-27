@@ -1,0 +1,97 @@
+
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from rest_framework import status
+from rest_framework.decorators import (
+    api_view,
+    permission_classes,
+)
+from rest_framework.permissions import IsAdminUser
+from rest_framework.response import Response
+
+from .serializers import LanceEntradaSerializer
+from .services import registrar_lance
+
+
+@api_view(["POST"])
+@permission_classes([IsAdminUser])
+def criar_lance(request):
+    serializer = LanceEntradaSerializer(data=request.data)
+
+    if not serializer.is_valid():
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    dados = serializer.validated_data
+
+    try:
+        lance = registrar_lance(
+            cliente_id=dados["cliente_id"],
+            valor=dados["valor"],
+            imovel_id=dados.get("imovel_id"),
+            veiculo_id=dados.get("veiculo_id"),
+        )
+    except ValidationError as erro:
+        return Response(
+            {"erro": erro.messages},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    except ObjectDoesNotExist:
+        return Response(
+            {"erro": "Cliente ou produto não encontrado."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    return Response(
+        {
+            "mensagem": "Lance registrado com sucesso.",
+            "lance_id": lance.id,
+            "cliente": lance.cliente.nome,
+            "valor": str(lance.valor),
+            "imovel_id": lance.imovel_id,
+            "veiculo_id": lance.veiculo_id,
+            "criado_em": lance.criado_em.isoformat(),
+        },
+        status=status.HTTP_201_CREATED,
+    )
+
+
+from rest_framework.permissions import IsAdminUser
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+
+from .models import Lance
+
+
+@api_view(["GET"])
+@permission_classes([IsAdminUser])
+def historico_lances(request):
+    imovel_id = request.query_params.get("imovel_id")
+    veiculo_id = request.query_params.get("veiculo_id")
+
+    if (imovel_id is None) == (veiculo_id is None):
+        return Response(
+            {"erro": "Informe exatamente um produto: imovel_id ou veiculo_id."},
+            status=400,
+        )
+
+    filtros = (
+        {"imovel_id": imovel_id}
+        if imovel_id is not None
+        else {"veiculo_id": veiculo_id}
+    )
+
+    lances = Lance.objects.filter(**filtros).order_by("id")
+
+    resultado = [
+        {
+            "lance_id": lance.id,
+            "cliente": lance.cliente.nome,
+            "valor": str(lance.valor),
+            "criado_em": lance.criado_em.isoformat(),
+        }
+        for lance in lances
+    ]
+
+    return Response(resultado)
