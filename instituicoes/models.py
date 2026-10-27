@@ -1,5 +1,8 @@
 
 from django.db import models
+from django.core.exceptions import ValidationError
+
+from core.validators import cnpj_valido, somente_digitos
 
 
 class InstituicaoFinanceira(models.Model):
@@ -10,6 +13,22 @@ class InstituicaoFinanceira(models.Model):
     endereco = models.CharField(max_length=255, blank=True)
     ativa = models.BooleanField(default=True)
     criada_em = models.DateTimeField(auto_now_add=True)
+
+    def clean(self):
+        super().clean()
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)    
+
+        documento = somente_digitos(self.cnpj)
+
+        if not cnpj_valido(documento):
+            raise ValidationError({
+                "cnpj": "Informe um CNPJ válido."
+            })
+
+        self.cnpj = documento
 
     class Meta:
         verbose_name = "Instituição financeira"

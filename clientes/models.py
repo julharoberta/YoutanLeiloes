@@ -1,5 +1,8 @@
 
 from django.db import models
+from django.core.exceptions import ValidationError
+
+from core.validators import cpf_valido, cnpj_valido, somente_digitos
 
 
 class Cliente(models.Model):
@@ -19,6 +22,34 @@ class Cliente(models.Model):
     autorizado_a_dar_lances = models.BooleanField(default=False)
     ativo = models.BooleanField(default=True)
     criado_em = models.DateTimeField(auto_now_add=True)
+
+    def clean(self):
+        super().clean()
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+        
+        documento = somente_digitos(self.documento)
+
+        if self.tipo_pessoa == "PF":
+            if not cpf_valido(documento):
+                raise ValidationError({
+                    "documento": "Informe um CPF válido."
+                })
+
+        elif self.tipo_pessoa == "PJ":
+            if not cnpj_valido(documento):
+                raise ValidationError({
+                    "documento": "Informe um CNPJ válido."
+                })
+
+        else:
+            raise ValidationError({
+                "tipo_pessoa": "Selecione PF ou PJ."
+            })
+
+        self.documento = documento
 
     class Meta:
         verbose_name = "Cliente"

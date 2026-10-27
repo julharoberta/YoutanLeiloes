@@ -17,9 +17,9 @@ class RegistrarLanceTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.instituicao = InstituicaoFinanceira.objects.create(
-            nome="Instituicao de Teste",
-            cnpj="98765432000199",
-        )
+    nome="Instituicao de Teste",
+    cnpj="11222333000181",
+)
 
         agora = timezone.now()
         cls.leilao = Leilao.objects.create(
@@ -36,7 +36,7 @@ class RegistrarLanceTests(TestCase):
         cls.cliente = Cliente.objects.create(
             nome="Cliente Autorizado",
             tipo_pessoa="PF",
-            documento="12345678901",
+            documento="52998224725",
             autorizado_a_dar_lances=True,
             ativo=True,
         )
