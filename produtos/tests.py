@@ -149,3 +149,46 @@ class RegistrarLanceTests(TestCase):
             )
 
         self.assertEqual(Lance.objects.count(), 1)
+
+        
+    def test_bloqueia_transferencia_de_imovel_com_lances(self):
+        registrar_lance(
+            cliente_id=self.cliente.id,
+            valor="101000.00",
+            imovel_id=self.imovel.id,
+        )
+
+        outro_leilao = Leilao.objects.create(
+            titulo="Outro Leilao",
+            descricao="Leilao para testar transferencia.",
+            data_inicio=timezone.now() - timedelta(days=1),
+            data_fim=timezone.now() + timedelta(days=1),
+            endereco="Rua Nova, 100",
+            cidade="Taubate",
+            estado="SP",
+            instituicao_financeira=self.instituicao,
+        )
+
+        self.imovel.leilao = outro_leilao
+
+        with self.assertRaises(ValidationError):
+            self.imovel.save()
+
+    def test_permite_transferencia_de_imovel_sem_lances(self):
+        outro_leilao = Leilao.objects.create(
+            titulo="Leilao para Transferencia",
+            descricao="Leilao para testar transferencia sem lances.",
+            data_inicio=timezone.now() - timedelta(days=1),
+            data_fim=timezone.now() + timedelta(days=1),
+            endereco="Rua Nova, 200",
+            cidade="Taubate",
+            estado="SP",
+            instituicao_financeira=self.instituicao,
+        )
+
+        self.imovel.leilao = outro_leilao
+        self.imovel.save()
+
+        self.imovel.refresh_from_db()
+        self.assertEqual(self.imovel.leilao_id, outro_leilao.id)
+
