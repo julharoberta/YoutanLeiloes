@@ -9,7 +9,7 @@ from django.utils import timezone
 from clientes.models import Cliente
 from instituicoes.models import InstituicaoFinanceira
 from leiloes.models import Leilao
-from produtos.models import Imovel, Lance
+from produtos.models import Imovel, Veiculo, Lance
 from produtos.services import registrar_lance
 
 
@@ -51,6 +51,22 @@ class RegistrarLanceTests(TestCase):
             cidade="Taubate",
             estado="SP",
             valor_inicial=Decimal("100000.00"),
+            incremento_minimo=Decimal("1000.00"),
+        )
+
+        
+        cls.veiculo = Veiculo.objects.create(
+            leilao=cls.leilao,
+            tipo="PASSEIO",
+            marca="Toyota",
+            modelo="Corolla",
+            ano_fabricacao=2022,
+            ano_modelo=2023,
+            chassi="9BWZZZ377VT004251",
+            placa="ABC1D23",
+            renavam="12345678901",
+            descricao="Veiculo para testes automatizados.",
+            valor_inicial=Decimal("50000.00"),
             incremento_minimo=Decimal("1000.00"),
         )
 
@@ -185,6 +201,48 @@ class RegistrarLanceTests(TestCase):
             estado="SP",
             instituicao_financeira=self.instituicao,
         )
+
+        
+    def test_bloqueia_transferencia_de_veiculo_com_lances(self):
+        registrar_lance(
+            cliente_id=self.cliente.id,
+            valor="51000.00",
+            veiculo_id=self.veiculo.id,
+        )
+
+        outro_leilao = Leilao.objects.create(
+            titulo="Outro Leilao para Veiculo",
+            descricao="Teste de transferencia de veiculo com lance.",
+            data_inicio=timezone.now() - timedelta(days=1),
+            data_fim=timezone.now() + timedelta(days=1),
+            endereco="Rua Nova, 300",
+            cidade="Taubate",
+            estado="SP",
+            instituicao_financeira=self.instituicao,
+        )
+
+        self.veiculo.leilao = outro_leilao
+
+        with self.assertRaises(ValidationError):
+            self.veiculo.save()
+
+    def test_permite_transferencia_de_veiculo_sem_lances(self):
+        outro_leilao = Leilao.objects.create(
+            titulo="Leilao para Transferir Veiculo",
+            descricao="Teste de transferencia de veiculo sem lance.",
+            data_inicio=timezone.now() - timedelta(days=1),
+            data_fim=timezone.now() + timedelta(days=1),
+            endereco="Rua Nova, 400",
+            cidade="Taubate",
+            estado="SP",
+            instituicao_financeira=self.instituicao,
+        )
+
+        self.veiculo.leilao = outro_leilao
+        self.veiculo.save()
+
+        self.veiculo.refresh_from_db()
+        self.assertEqual(self.veiculo.leilao_id, outro_leilao.id)
 
         self.imovel.leilao = outro_leilao
         self.imovel.save()
