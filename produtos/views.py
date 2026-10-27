@@ -1,13 +1,12 @@
 
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
+
 from rest_framework import status
-from rest_framework.decorators import (
-    api_view,
-    permission_classes,
-)
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 
+from .models import Lance
 from .serializers import LanceEntradaSerializer
 from .services import registrar_lance
 
@@ -57,13 +56,6 @@ def criar_lance(request):
     )
 
 
-from rest_framework.permissions import IsAdminUser
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.response import Response
-
-from .models import Lance
-
-
 @api_view(["GET"])
 @permission_classes([IsAdminUser])
 def historico_lances(request):
@@ -72,8 +64,13 @@ def historico_lances(request):
 
     if (imovel_id is None) == (veiculo_id is None):
         return Response(
-            {"erro": "Informe exatamente um produto: imovel_id ou veiculo_id."},
-            status=400,
+            {
+                "erro": (
+                    "Informe exatamente um produto: "
+                    "imovel_id ou veiculo_id."
+                )
+            },
+            status=status.HTTP_400_BAD_REQUEST,
         )
 
     filtros = (
@@ -94,4 +91,4 @@ def historico_lances(request):
         for lance in lances
     ]
 
-    return Response(resultado)
+    return Response(resultado, status=status.HTTP_200_OK)

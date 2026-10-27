@@ -2,9 +2,12 @@
 from datetime import timedelta
 from decimal import Decimal
 
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.utils import timezone
+
+from rest_framework.test import APITestCase
 
 from clientes.models import Cliente
 from instituicoes.models import InstituicaoFinanceira
@@ -70,7 +73,8 @@ class RegistrarLanceTests(TestCase):
             incremento_minimo=Decimal("1000.00"),
         )
 
-    
+    # Testes de validacao de imoveis
+
     def test_rejeita_valor_inicial_zero_em_imovel(self):
         self.imovel.valor_inicial = Decimal("0.00")
 
@@ -90,13 +94,11 @@ class RegistrarLanceTests(TestCase):
         self.imovel.refresh_from_db()
         self.assertEqual(self.imovel.estado, "SP")
 
+    # Testes de placa e RENAVAM
 
-
-
-
-        
     def test_rejeita_placa_com_tamanho_invalido(self):
         self.veiculo.placa = "ABC123"
+
         with self.assertRaises(ValidationError):
             self.veiculo.save()
 
@@ -109,6 +111,7 @@ class RegistrarLanceTests(TestCase):
 
     def test_rejeita_renavam_com_mais_de_11_digitos(self):
         self.veiculo.renavam = "123456789012"
+
         with self.assertRaises(ValidationError):
             self.veiculo.save()
 
@@ -217,7 +220,7 @@ class RegistrarLanceTests(TestCase):
 
         self.assertEqual(Lance.objects.count(), 1)
 
-    # Testes de transferência de imóveis
+    # Testes de transferencia de imoveis
 
     def test_bloqueia_transferencia_de_imovel_com_lances(self):
         registrar_lance(
@@ -260,7 +263,7 @@ class RegistrarLanceTests(TestCase):
         self.imovel.refresh_from_db()
         self.assertEqual(self.imovel.leilao_id, outro_leilao.id)
 
-    # Testes de transferência de veículos
+    # Testes de transferencia de veiculos
 
     def test_bloqueia_transferencia_de_veiculo_com_lances(self):
         registrar_lance(
@@ -303,7 +306,7 @@ class RegistrarLanceTests(TestCase):
         self.veiculo.refresh_from_db()
         self.assertEqual(self.veiculo.leilao_id, outro_leilao.id)
 
-    # Testes de validação dos dados do veículo
+    # Testes de validacao dos dados do veiculo
 
     def test_rejeita_chassi_com_tamanho_invalido(self):
         self.veiculo.chassi = "ABC123"
@@ -335,3 +338,127 @@ class RegistrarLanceTests(TestCase):
 
         with self.assertRaises(ValidationError):
             self.veiculo.save()
+
+
+class ApiLancesTests(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        Usuario = get_user_model()
+
+        cls.admin = Usuario.objects.create_user(
+            username="admin_api_teste",
+            password="senha-teste-123",
+            is_staff=True,
+        )
+
+        cls.instituicao = InstituicaoFinanceira.objects.create(
+            nome="Instituicao API Teste",
+            cnpj="11222333000181",
+        )
+
+        agora = timezone.now()
+
+        cls.leilao = Leilao.objects.create(
+            titulo="Leilao API",
+            descricao="Leilao para testar a API.",
+            data_inicio=agora - timedelta(days=1),
+            data_fim=agora + timedelta(days=1),
+            endereco="Rua de Teste, 100",
+            cidade="Taubate",
+            estado="SP",
+            instituicao_financeira=cls.instituicao,
+        )
+
+        cls.cliente_teste = Cliente.objects.create(
+            nome="Cliente API",
+            tipo_pessoa="PF",
+            documento="52998224725",
+            autorizado_a_dar_lances=True,
+            ativo=True,
+        )
+
+        cls.imovel_teste = Imovel.objects.create(
+            leilao=cls.leilao,
+            tipo="RESIDENCIAL",
+            matricula="API-MAT-001",
+            cartorio="Cartorio API",
+            descricao="Imovel para testes da API.",
+            endereco="Rua de Teste, 200",
+            cidade="Taubate",
+            estado="SP",
+            valor_inicial=Decimal("100000.00"),
+            incremento_minimo=Decimal("1000.00"),
+        )
+
+    def setUp(self):
+        self.client.force_authenticate(user=self.admin)
+
+    def test_api_registra_lance_valido(self):
+        resposta = self.client.post(
+            "/api/lances/",
+            {
+                "cliente_id": self.cliente_teste.id,
+                "valor": "101000.00",
+                "imovel_id": self.imovel_teste.id,
+            },
+            format="json",
+        )
+
+        self.assertEqual(resposta.status_code, 201)
+        self.assertEqual(Lance.objects.count(), 1)
+
+    def test_api_rejeita_usuario_sem_permissao(self):
+        Usuario = get_user_model()
+        usuario = Usuario.objects.create_user(
+            username="usuario_comum_api",
+            password="senha-teste-123",
+            is_staff=False,
+        )
+
+        self.client.force_authenticate(user=usuario)
+
+        resposta = self.client.post(
+            "/api/lances/",
+            {
+                "cliente_id": self.cliente_teste.id,
+                "valor": "101000.00",
+                "imovel_id": self.imovel_teste.id,
+            },
+            format="json",
+        )
+
+        self.assertEqual(resposta.status_code, 403)
+        self.assertEqual(Lance.objects.count(), 0)
+
+    def test_api_rejeita_lance_com_dados_invalidos(self):
+        resposta = self.client.post(
+            "/api/lances/",
+            {
+                "cliente_id": self.cliente_teste.id,
+                "valor": "valor-invalido",
+                "imovel_id": self.imovel_teste.id,
+            },
+            format="json",
+        )
+
+        self.assertEqual(resposta.status_code, 400)
+        self.assertEqual(Lance.objects.count(), 0)
+
+    def test_api_consulta_historico_de_lances(self):
+        registrar_lance(
+            cliente_id=self.cliente_teste.id,
+            valor="101000.00",
+            imovel_id=self.imovel_teste.id,
+        )
+
+        resposta = self.client.get(
+            "/api/lances/historico/",
+            {"imovel_id": self.imovel_teste.id},
+        )
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertEqual(len(resposta.data), 1)
+        self.assertEqual(
+            resposta.data[0]["valor"],
+            "101000.00",
+        )
