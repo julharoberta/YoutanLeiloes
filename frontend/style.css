@@ -1,0 +1,137 @@
+
+:root {
+    --navy: #101b2d;
+    --navy-light: #1c2c43;
+    --gold: #f5b82e;
+    --background: #f4f6f9;
+    --text: #243044;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: var(--background);
+    color: var(--text);
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.navbar {
+    background: var(--navy);
+    padding: 18px 0;
+}
+
+.navbar-brand {
+    letter-spacing: 2px;
+    font-size: 1.35rem;
+}
+
+.navbar-brand span {
+    color: var(--gold);
+}
+
+.hero {
+    color: #fff;
+    background: linear-gradient(120deg, var(--navy), var(--navy-light));
+    padding: 45px 0 55px;
+}
+
+.eyebrow {
+    color: var(--gold);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+}
+
+.hero h1 {
+    font-size: clamp(2.2rem, 5vw, 4rem);
+    font-weight: 800;
+    line-height: 1.12;
+}
+
+.hero h1 span {
+    color: var(--gold);
+}
+
+.hero .lead {
+    max-width: 650px;
+    color: #d5deea;
+}
+
+.btn-warning {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: var(--navy);
+    font-weight: 700;
+}
+
+.btn-warning:hover {
+    background: #e4a91e;
+    border-color: #e4a91e;
+    color: var(--navy);
+}
+
+.feature-card,
+.history-card {
+    background: #fff;
+    border: 1px solid #e2e7ef;
+    border-radius: 14px;
+    padding: 26px;
+    box-shadow: 0 8px 24px rgba(16, 27, 45, 0.04);
+}
+
+.feature-card {
+    border-top: 4px solid var(--gold);
+}
+
+.feature-card h2 {
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+
+.feature-card p {
+    margin-bottom: 0;
+    color: #647187;
+    line-height: 1.6;
+}
+
+.history-card h2 {
+    font-size: 1.7rem;
+    font-weight: 750;
+}
+
+.form-control,
+.form-select {
+    min-height: 44px;
+    border-color: #d7deea;
+}
+
+.btn-dark {
+    min-height: 44px;
+    background: var(--navy);
+}
+
+.table thead th {
+    background: #edf1f7;
+    color: var(--navy);
+    white-space: nowrap;
+}
+
+footer {
+    background: var(--navy);
+    color: #cbd4e1;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 576px) {
+    .hero {
+        padding: 30px 0 40px;
+    }
+
+    .feature-card,
+    .history-card {
+        padding: 20px;
+    }
+}

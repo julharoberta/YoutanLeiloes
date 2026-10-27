@@ -1,0 +1,52 @@
+
+services:
+  db:
+    image: postgres:16
+    container_name: youtan_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: youtan
+      POSTGRES_USER: youtan
+      POSTGRES_PASSWORD: youtan_dev_2026
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U youtan -d youtan"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: youtan_backend
+    restart: unless-stopped
+    environment:
+      DB_ENGINE: postgresql
+      DB_NAME: youtan
+      DB_USER: youtan
+      DB_PASSWORD: youtan_dev_2026
+      DB_HOST: db
+      DB_PORT: "5432"
+      DJANGO_DEBUG: "True"
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,backend
+      DJANGO_CSRF_TRUSTED_ORIGINS: http://localhost:8080,http://127.0.0.1:8080
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: youtan_frontend
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
