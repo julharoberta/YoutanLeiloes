@@ -70,6 +70,31 @@ class RegistrarLanceTests(TestCase):
             incremento_minimo=Decimal("1000.00"),
         )
 
+        
+    def test_rejeita_placa_com_tamanho_invalido(self):
+        self.veiculo.placa = "ABC123"
+        with self.assertRaises(ValidationError):
+            self.veiculo.save()
+
+    def test_normaliza_placa_para_letras_maiusculas(self):
+        self.veiculo.placa = "abc1d23"
+        self.veiculo.save()
+
+        self.veiculo.refresh_from_db()
+        self.assertEqual(self.veiculo.placa, "ABC1D23")
+
+    def test_rejeita_renavam_com_mais_de_11_digitos(self):
+        self.veiculo.renavam = "123456789012"
+        with self.assertRaises(ValidationError):
+            self.veiculo.save()
+
+    def test_normaliza_renavam_removendo_caracteres_nao_numericos(self):
+        self.veiculo.renavam = "123.456.789-01"
+        self.veiculo.save()
+
+        self.veiculo.refresh_from_db()
+        self.assertEqual(self.veiculo.renavam, "12345678901")
+
     # Testes de registro de lances
 
     def test_registra_lance_valido(self):
