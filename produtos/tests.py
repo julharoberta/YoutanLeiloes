@@ -1,3 +1,151 @@
-from django.test import TestCase
 
-# Create your tests here.
+from datetime import timedelta
+from decimal import Decimal
+
+from django.core.exceptions import ValidationError
+from django.test import TestCase
+from django.utils import timezone
+
+from clientes.models import Cliente
+from instituicoes.models import InstituicaoFinanceira
+from leiloes.models import Leilao
+from produtos.models import Imovel, Lance
+from produtos.services import registrar_lance
+
+
+class RegistrarLanceTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.instituicao = InstituicaoFinanceira.objects.create(
+            nome="Instituicao de Teste",
+            cnpj="98765432000199",
+        )
+
+        agora = timezone.now()
+        cls.leilao = Leilao.objects.create(
+            titulo="Leilao para Testes",
+            descricao="Leilao criado automaticamente para testes.",
+            data_inicio=agora - timedelta(days=1),
+            data_fim=agora + timedelta(days=1),
+            endereco="Rua de Teste, 100",
+            cidade="Taubate",
+            estado="SP",
+            instituicao_financeira=cls.instituicao,
+        )
+
+        cls.cliente = Cliente.objects.create(
+            nome="Cliente Autorizado",
+            tipo_pessoa="PF",
+            documento="12345678901",
+            autorizado_a_dar_lances=True,
+            ativo=True,
+        )
+
+        cls.imovel = Imovel.objects.create(
+            leilao=cls.leilao,
+            tipo="RESIDENCIAL",
+            matricula="TESTE-MAT-001",
+            cartorio="Cartorio de Teste",
+            descricao="Imovel para testes automatizados.",
+            endereco="Rua de Teste, 200",
+            cidade="Taubate",
+            estado="SP",
+            valor_inicial=Decimal("100000.00"),
+            incremento_minimo=Decimal("1000.00"),
+        )
+
+    def test_registra_lance_valido(self):
+        lance = registrar_lance(
+            cliente_id=self.cliente.id,
+            valor="101000.00",
+            imovel_id=self.imovel.id,
+        )
+
+        self.assertEqual(lance.valor, Decimal("101000.00"))
+        self.assertEqual(lance.cliente, self.cliente)
+        self.assertEqual(lance.imovel, self.imovel)
+        self.assertIsNone(lance.veiculo)
+
+    def test_rejeita_lance_abaixo_do_valor_minimo(self):
+        with self.assertRaises(ValidationError):
+            registrar_lance(
+                cliente_id=self.cliente.id,
+                valor="100500.00",
+                imovel_id=self.imovel.id,
+            )
+
+        self.assertEqual(Lance.objects.count(), 0)
+
+    def test_rejeita_lance_com_incremento_invalido(self):
+        with self.assertRaises(ValidationError):
+            registrar_lance(
+                cliente_id=self.cliente.id,
+                valor="101500.00",
+                imovel_id=self.imovel.id,
+            )
+
+        self.assertEqual(Lance.objects.count(), 0)
+
+    def test_rejeita_cliente_nao_autorizado(self):
+        self.cliente.autorizado_a_dar_lances = False
+        self.cliente.save()
+
+        with self.assertRaises(ValidationError):
+            registrar_lance(
+                cliente_id=self.cliente.id,
+                valor="101000.00",
+                imovel_id=self.imovel.id,
+            )
+
+        self.assertEqual(Lance.objects.count(), 0)
+
+    def test_rejeita_cliente_inativo(self):
+        self.cliente.ativo = False
+        self.cliente.save()
+
+        with self.assertRaises(ValidationError):
+            registrar_lance(
+                cliente_id=self.cliente.id,
+                valor="101000.00",
+                imovel_id=self.imovel.id,
+            )
+
+        self.assertEqual(Lance.objects.count(), 0)
+
+    def test_rejeita_lance_em_leilao_encerrado(self):
+        self.leilao.data_fim = timezone.now() - timedelta(days=1)
+        self.leilao.save()
+
+        with self.assertRaises(ValidationError):
+            registrar_lance(
+                cliente_id=self.cliente.id,
+                valor="101000.00",
+                imovel_id=self.imovel.id,
+            )
+
+        self.assertEqual(Lance.objects.count(), 0)
+
+    def test_rejeita_lance_sem_produto(self):
+        with self.assertRaises(ValidationError):
+            registrar_lance(
+                cliente_id=self.cliente.id,
+                valor="101000.00",
+            )
+
+        self.assertEqual(Lance.objects.count(), 0)
+
+    def test_rejeita_lance_com_valor_nao_crescente(self):
+        registrar_lance(
+            cliente_id=self.cliente.id,
+            valor="101000.00",
+            imovel_id=self.imovel.id,
+        )
+
+        with self.assertRaises(ValidationError):
+            registrar_lance(
+                cliente_id=self.cliente.id,
+                valor="101000.00",
+                imovel_id=self.imovel.id,
+            )
+
+        self.assertEqual(Lance.objects.count(), 1)
