@@ -269,6 +269,15 @@ class RegistrarLanceTests(TestCase):
                 imovel_id=self.imovel.id,
             )
 
+        with self.assertRaises(ValidationError):
+            registrar_lance(
+                cliente_id=self.cliente.id,
+                valor="4600.00",
+                imovel_id=self.imovel.id,
+            )
+
+        self.assertEqual(Lance.objects.count(), 3)    
+
         self.assertEqual(Lance.objects.count(), 3)
 
     # Testes de transferencia de imoveis
