@@ -69,7 +69,7 @@ $(document).ready(function () {
 
                     const linha = $("<tr>");
 
-                    linha.append($("<td>").text(lance.id ?? "-"));
+                    linha.append($("<td>").text(lance.lance_id ?? lance.id ?? "-"));
                     linha.append($("<td>").text(lance.cliente_nome ?? lance.cliente ?? "-"));
                     linha.append($("<td>").text(lance.documento ?? "-"));
                     linha.append($("<td>").text(valorFormatado));
