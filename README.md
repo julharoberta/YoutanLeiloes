@@ -80,7 +80,7 @@ Para executar os testes automatizados no ambiente Python local:
 python manage.py test
 ```
 
-O projeto possui **38 testes automatizados**, aprovados na última execução.
+O projeto possui 41 testes automatizados, aprovados na última execução.
 
 ## Encerrar os serviços
 
