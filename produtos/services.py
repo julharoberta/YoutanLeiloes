@@ -1,4 +1,4 @@
-
+﻿
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
@@ -62,7 +62,7 @@ def registrar_lance(cliente_id, valor, imovel_id=None, veiculo_id=None):
             f"O lance deve ser maior que R$ {valor_base}."
         )
 
-    diferenca = valor - produto.valor_inicial
+    diferenca = valor - valor_base
     incremento = produto.incremento_minimo
 
     if diferenca < 0 or diferenca % incremento != 0:

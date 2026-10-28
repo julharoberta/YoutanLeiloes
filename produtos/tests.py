@@ -220,6 +220,57 @@ class RegistrarLanceTests(TestCase):
 
         self.assertEqual(Lance.objects.count(), 1)
 
+    def test_rejeita_segundo_lance_com_incremento_insuficiente(self):
+        registrar_lance(
+            cliente_id=self.cliente.id,
+            valor="101000.00",
+            imovel_id=self.imovel.id,
+        )
+
+        with self.assertRaises(ValidationError):
+            registrar_lance(
+                cliente_id=self.cliente.id,
+                valor="101500.00",
+                imovel_id=self.imovel.id,
+            )
+
+        self.assertEqual(Lance.objects.count(), 1)
+
+    def test_respeita_incremento_em_relacao_ao_ultimo_lance(self):
+        self.imovel.valor_inicial = Decimal("4500.00")
+        self.imovel.incremento_minimo = Decimal("200.00")
+        self.imovel.save()
+
+        primeiro_lance = registrar_lance(
+            cliente_id=self.cliente.id,
+            valor="4700.00",
+            imovel_id=self.imovel.id,
+        )
+        self.assertEqual(primeiro_lance.valor, Decimal("4700.00"))
+
+        segundo_lance = registrar_lance(
+            cliente_id=self.cliente.id,
+            valor="4900.00",
+            imovel_id=self.imovel.id,
+        )
+        self.assertEqual(segundo_lance.valor, Decimal("4900.00"))
+
+        terceiro_lance = registrar_lance(
+            cliente_id=self.cliente.id,
+            valor="5100.00",
+            imovel_id=self.imovel.id,
+        )
+        self.assertEqual(terceiro_lance.valor, Decimal("5100.00"))
+
+        with self.assertRaises(ValidationError):
+            registrar_lance(
+                cliente_id=self.cliente.id,
+                valor="4885.00",
+                imovel_id=self.imovel.id,
+            )
+
+        self.assertEqual(Lance.objects.count(), 3)
+
     # Testes de transferencia de imoveis
 
     def test_bloqueia_transferencia_de_imovel_com_lances(self):
@@ -409,6 +460,7 @@ class ApiLancesTests(APITestCase):
 
     def test_api_rejeita_usuario_sem_permissao(self):
         Usuario = get_user_model()
+
         usuario = Usuario.objects.create_user(
             username="usuario_comum_api",
             password="senha-teste-123",
@@ -444,27 +496,26 @@ class ApiLancesTests(APITestCase):
         self.assertEqual(resposta.status_code, 400)
         self.assertEqual(Lance.objects.count(), 0)
 
-    
-def test_api_consulta_historico_de_lances(self):
-    registrar_lance(
-        cliente_id=self.cliente_teste.id,
-        valor="101000.00",
-        imovel_id=self.imovel_teste.id,
-    )
+    def test_api_consulta_historico_de_lances(self):
+        registrar_lance(
+            cliente_id=self.cliente_teste.id,
+            valor="101000.00",
+            imovel_id=self.imovel_teste.id,
+        )
 
-    self.client.force_authenticate(user=None)
+        self.client.force_authenticate(user=None)
 
-    resposta = self.client.get(
-        "/api/lances/historico/",
-        {"imovel_id": self.imovel_teste.id},
-    )
+        resposta = self.client.get(
+            "/api/lances/historico/",
+            {"imovel_id": self.imovel_teste.id},
+        )
 
-    self.assertEqual(resposta.status_code, 200)
-    self.assertEqual(len(resposta.data), 1)
-    self.assertEqual(resposta.data[0]["valor"], "101000.00")
-    self.assertEqual(resposta.data[0]["cliente"], "Cliente API")
-    self.assertEqual(
-        resposta.data[0]["documento"],
-        "***.***.***-25",
-    )
-    self.assertNotIn("52998224725", str(resposta.data))
+        self.assertEqual(resposta.status_code, 200)
+        self.assertEqual(len(resposta.data), 1)
+        self.assertEqual(resposta.data[0]["valor"], "101000.00")
+        self.assertEqual(resposta.data[0]["cliente"], "Cliente API")
+        self.assertEqual(
+            resposta.data[0]["documento"],
+            "***.***.***-25",
+        )
+        self.assertNotIn("52998224725", str(resposta.data))
