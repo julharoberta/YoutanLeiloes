@@ -278,7 +278,6 @@ class RegistrarLanceTests(TestCase):
 
         self.assertEqual(Lance.objects.count(), 3)    
 
-        self.assertEqual(Lance.objects.count(), 3)
 
     # Testes de transferencia de imoveis
 
