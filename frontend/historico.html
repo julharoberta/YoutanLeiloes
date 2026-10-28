@@ -1,0 +1,100 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#101a30">
+    <title>Histórico de Lances | Youtan Leilões</title>
+    <link rel="stylesheet" href="style.css?v=2">
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <a class="logo" href="index.html">YOUTAN <span>LEILÕES</span></a>
+            <div class="nav-links">
+                <a href="index.html">Início</a>
+                <a href="leiloes.html">Leilões</a>
+                <a href="historico.html" aria-current="page">Histórico de lances</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container">
+        <section class="page-heading">
+            <p class="eyebrow">TRANSPARÊNCIA</p>
+            <h1>Histórico de lances</h1>
+            <p>Consulte os lances registrados para um imóvel ou veículo.</p>
+        </section>
+
+        <section class="historico-section">
+            <form id="formHistorico">
+                <div class="form-group">
+                    <label for="tipoProduto">Tipo de produto</label>
+                    <select id="tipoProduto" name="tipoProduto" required>
+                        <option value="imovel_id">Imóvel</option>
+                        <option value="veiculo_id">Veículo</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="produtoId">Código do produto</label>
+                    <input
+                        type="number"
+                        id="produtoId"
+                        name="produtoId"
+                        min="1"
+                        step="1"
+                        placeholder="Ex.: 1"
+                        required
+                    >
+                </div>
+
+                <button type="submit" class="btn-lance">Consultar histórico</button>
+            </form>
+
+            <p id="mensagem" role="status" aria-live="polite"></p>
+
+            <div class="tabela-container">
+                <table id="resultadoLances">
+                    <thead>
+                        <tr>
+                            <th>Lance</th>
+                            <th>Cliente</th>
+                            <th>Documento</th>
+                            <th>Valor</th>
+                            <th>Data e hora</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="5">Informe o tipo e o código do produto para consultar.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>Youtan Leilões — Transparência e oportunidades.</p>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="script.js"></script>
+<script>
+        const parametros = new URLSearchParams(window.location.search);
+        const tipoRecebido = parametros.get("imovel_id")
+            ? "imovel_id"
+            : parametros.get("veiculo_id")
+                ? "veiculo_id"
+                : null;
+
+        if (tipoRecebido) {
+            document.getElementById("tipoProduto").value = tipoRecebido;
+            document.getElementById("produtoId").value =
+                parametros.get(tipoRecebido);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#101a30">
+    <title>Leilões | Youtan Leilões</title>
+    <link rel="stylesheet" href="style.css?v=2">
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <a class="logo" href="index.html">YOUTAN <span>LEILÕES</span></a>
+            <div class="nav-links">
+                <a href="index.html">Início</a>
+                <a href="leiloes.html" aria-current="page">Leilões</a>
+                <a href="historico.html">Histórico de lances</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container">
+        <section class="page-heading">
+            <p class="eyebrow">OPORTUNIDADES</p>
+            <h1>Leilões disponíveis</h1>
+            <p>Explore os leilões cadastrados e consulte os imóveis e veículos disponíveis.</p>
+        </section>
+
+        <p id="mensagemLeiloes" role="status" aria-live="polite">
+            Carregando leilões...
+        </p>
+
+        <section id="listaLeiloes" aria-label="Lista de leilões"></section>
+    </main>
+
+    <footer>
+        <p>Youtan Leilões — Transparência e oportunidades.</p>
+    </footer>
+
+    <script src="leiloes.js"></script>
+</body>
+</html>

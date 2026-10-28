@@ -5,6 +5,8 @@ from rest_framework import serializers
 from clientes.models import Cliente
 from .models import Imovel, Veiculo
 
+from leiloes.models import Leilao
+
 
 class LanceEntradaSerializer(serializers.Serializer):
     cliente_id = serializers.IntegerField()
@@ -45,3 +47,75 @@ class LanceEntradaSerializer(serializers.Serializer):
             )
 
         return dados
+
+from leiloes.models import Leilao
+
+
+class ImovelConsultaSerializer(serializers.ModelSerializer):
+    leilao_titulo = serializers.CharField(
+        source="leilao.titulo",
+        read_only=True,
+    )
+
+    class Meta:
+        model = Imovel
+        fields = [
+            "id",
+            "leilao",
+            "leilao_titulo",
+            "tipo",
+            "descricao",
+            "endereco",
+            "cidade",
+            "estado",
+            "valor_inicial",
+            "incremento_minimo",
+        ]
+
+
+class VeiculoConsultaSerializer(serializers.ModelSerializer):
+    leilao_titulo = serializers.CharField(
+        source="leilao.titulo",
+        read_only=True,
+    )
+
+    class Meta:
+        model = Veiculo
+        fields = [
+            "id",
+            "leilao",
+            "leilao_titulo",
+            "tipo",
+            "marca",
+            "modelo",
+            "ano_fabricacao",
+            "ano_modelo",
+            "descricao",
+            "valor_inicial",
+            "incremento_minimo",
+        ]
+
+
+class LeilaoConsultaSerializer(serializers.ModelSerializer):
+    instituicao_financeira_nome = serializers.CharField(
+        source="instituicao_financeira.nome",
+        read_only=True,
+    )
+    imoveis = ImovelConsultaSerializer(many=True, read_only=True)
+    veiculos = VeiculoConsultaSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Leilao
+        fields = [
+            "id",
+            "titulo",
+            "descricao",
+            "data_inicio",
+            "data_fim",
+            "endereco",
+            "cidade",
+            "estado",
+            "instituicao_financeira_nome",
+            "imoveis",
+            "veiculos",
+        ]
