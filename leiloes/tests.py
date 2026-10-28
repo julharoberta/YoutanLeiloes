@@ -23,13 +23,21 @@ class LeilaoValidacaoTests(TestCase):
         return Leilao(
             titulo="Leilão de Teste",
             descricao="Leilão utilizado para testes automatizados.",
-            data_inicio=agora,
-            data_fim=agora + timedelta(days=7),
+            data_inicio=agora + timedelta(days=1),
+            data_fim=agora + timedelta(days=2),
             endereco="Rua de Teste, 100",
             cidade="Taubaté",
             estado="sp",
             instituicao_financeira=self.instituicao,
         )
+
+    def test_rejeita_data_inicio_no_passado(self):
+        leilao = self.criar_leilao()
+        leilao.data_inicio = timezone.now() - timedelta(days=1)
+        leilao.data_fim = timezone.now() + timedelta(days=6)
+
+        with self.assertRaises(ValidationError):
+            leilao.save()
 
     def test_rejeita_data_final_anterior_ao_inicio(self):
         leilao = self.criar_leilao()

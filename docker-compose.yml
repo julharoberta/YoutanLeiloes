@@ -22,6 +22,8 @@ services:
       dockerfile: Dockerfile
     container_name: youtan_backend
     restart: unless-stopped
+    volumes:
+      - .:/app
     environment:
       DB_ENGINE: postgresql
       DB_NAME: youtan

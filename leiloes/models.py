@@ -2,7 +2,7 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from instituicoes.models import InstituicaoFinanceira
-
+from django.utils import timezone
 
 class Leilao(models.Model):
     titulo = models.CharField(max_length=200)
@@ -29,6 +29,11 @@ class Leilao(models.Model):
 
     def clean(self):
         super().clean()
+
+        if self.data_inicio and self.data_inicio <= timezone.now():
+            raise ValidationError({
+                "data_inicio": "A data de início do leilão deve ser futura."
+            })
 
         if (
             self.data_inicio
