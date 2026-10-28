@@ -6,20 +6,41 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
 
-from .models import Lance
-from .serializers import LanceEntradaSerializer
+from .models import Lance, Imovel, Veiculo
+from leiloes.models import Leilao
+from .serializers import (
+    LanceEntradaSerializer,
+    LeilaoConsultaSerializer,
+)
 from .services import registrar_lance
 
 
 def mascarar_documento(documento):
     """Oculta parte do CPF ou CNPJ, preservando apenas os últimos dígitos."""
-    digitos = "".join(caractere for caractere in documento if caractere.isdigit())
+    digitos = "".join(
+        caractere for caractere in documento if caractere.isdigit()
+    )
 
     if len(digitos) == 11:
         return f"***.***.***-{digitos[-2:]}"
     if len(digitos) == 14:
         return f"**.***.***/****-{digitos[-2:]}"
     return "Documento não disponível"
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def listar_leiloes(request):
+    leiloes = (
+        Leilao.objects
+        .select_related("instituicao_financeira")
+        .prefetch_related("imoveis", "veiculos")
+        .order_by("data_inicio")
+    )
+
+    serializer = LeilaoConsultaSerializer(leiloes, many=True)
+
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @api_view(["POST"])
