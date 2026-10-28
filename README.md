@@ -1,90 +1,146 @@
-﻿# Youtan LeilÃµes
+﻿$readme = @'
+# Youtan Leilões
 
-Sistema web para gerenciamento de leilÃµes, desenvolvido com Django, PostgreSQL, Bootstrap, JavaScript, jQuery e Docker.
+Sistema web para gerenciamento de leilões de imóveis e veículos, desenvolvido com Python, Django, Django REST Framework, PostgreSQL, HTML5, CSS3, Bootstrap, JavaScript, jQuery, Nginx e Docker Compose.
 
 ## Funcionalidades
 
 - Cadastro e gerenciamento de clientes.
-- Cadastro e gerenciamento de instituiÃ§Ãµes financeiras.
-- Cadastro e gerenciamento de leilÃµes.
-- Cadastro de imÃ³veis e veÃ­culos vinculados a leilÃµes.
-- Registro e consulta do histÃ³rico de lances.
-- ValidaÃ§Ã£o das regras para registro de lances.
+- Cadastro e gerenciamento de instituições financeiras.
+- Cadastro e gerenciamento de leilões.
+- Cadastro de imóveis e veículos vinculados a leilões.
+- Consulta pública dos leilões e produtos disponíveis.
+- Registro de lances com validações de negócio.
+- Validação do período do leilão e do incremento mínimo.
+- Consulta do histórico de lances por produto.
+- Exibição do cliente, documento parcialmente mascarado, valor e data do lance.
 - Painel administrativo para gerenciamento dos cadastros.
-- Interface web com acesso Ã  consulta de histÃ³rico de lances.
 
-## Tecnologias utilizadas
+## Tecnologias
 
-- **Backend:** Python e Django.
+- **Backend:** Python, Django e Django REST Framework.
 - **Banco de dados:** PostgreSQL.
-- **Frontend:** HTML5, CSS3, Bootstrap 5 e jQuery.
+- **Frontend:** HTML5, CSS3, Bootstrap, JavaScript e jQuery.
 - **Servidor web:** Nginx.
-- **API:** endpoints REST desenvolvidos com Django REST Framework.
 - **Containers:** Docker e Docker Compose.
 - **Testes:** testes automatizados do Django.
 
-## PrÃ©-requisitos
+## Pré-requisitos
 
-Para executar a aplicaÃ§Ã£o com Docker, Ã© necessÃ¡rio ter o Docker Desktop instalado e em funcionamento.
+- Git instalado.
+- Docker Desktop instalado e em execução.
+- Docker Compose disponível pelo comando `docker compose`.
 
-## Como executar com Docker
+## Como executar o projeto
 
-1. Clone o repositÃ³rio:
+Clone o repositório:
 
-   ```bash
-   git clone https://github.com/julharoberta/YoutanLeiloes.git
-   ```
+```bash
+git clone https://github.com/julharoberta/YoutanLeiloes.git
+cd YoutanLeiloes
+```
 
-2. Acesse a pasta:
+Construa as imagens e inicie os serviços:
 
-   ```bash
-   cd YoutanLeiloes
-   ```
+```bash
+docker compose up --build -d
+```
 
-3. Inicie os serviÃ§os:
+O Docker Compose inicia o frontend, o backend e o PostgreSQL. As migrações do Django são executadas automaticamente antes da inicialização do servidor backend.
 
-   ```bash
-   docker compose up --build -d
-   ```
+Acesse:
 
-   O Docker Compose iniciarÃ¡ o frontend, o backend e o banco de dados PostgreSQL. As migraÃ§Ãµes sÃ£o executadas na inicializaÃ§Ã£o do backend.
+- **Site:** http://localhost:8080/
+- **Painel administrativo:** http://localhost:8080/admin/
+- **Leilões:** http://localhost:8080/leiloes.html
+- **Histórico de lances:** http://localhost:8080/historico.html
 
-4. Acesse a aplicaÃ§Ã£o:
+Para criar um usuário administrador, caso ainda não exista:
 
-   - **Interface web:** http://localhost:8080
-   - **Painel administrativo:** http://localhost:8080/admin/
+```bash
+docker compose exec backend python manage.py createsuperuser
+```
 
-5. Para criar um usuÃ¡rio administrador, caso necessÃ¡rio:
-
-   ```bash
-   docker compose exec backend python manage.py createsuperuser
-   ```
+Para registrar lances pela interface atual, entre no Django Admin no mesmo navegador antes de acessar a página de leilões. O endpoint de registro exige autenticação e valida os dados no backend.
 
 ## API
 
-O histÃ³rico de lances pode ser consultado pelo endpoint:
+### Consultar leilões
 
-```text
-GET /api/lances/historico/
+```http
+GET /api/leiloes/
 ```
 
-A consulta pode receber o identificador de um imÃ³vel ou veÃ­culo, conforme os parÃ¢metros implementados no backend.
+### Consultar clientes ativos e autorizados
 
-A API tambÃ©m possui um endpoint para registro de lances, protegido por autenticaÃ§Ã£o administrativa.
+Esse endpoint exige autenticação administrativa:
 
-## Executar os testes
+```http
+GET /api/clientes/autorizados/
+```
 
-Para executar os testes automatizados no ambiente Python local:
+### Registrar um lance
+
+O endpoint exige autenticação e recebe um cliente, um valor e exatamente um produto: imóvel ou veículo.
+
+Exemplo de lance para imóvel:
+
+```http
+POST /api/lances/
+Content-Type: application/json
+```
+
+```json
+{
+  "cliente_id": 1,
+  "valor": "151000.00",
+  "imovel_id": 1
+}
+```
+
+O backend valida a autorização do cliente, o período do leilão e as regras de incremento mínimo. Um lance não deve ser considerado registrado até que a API confirme o sucesso.
+
+### Consultar o histórico de lances
+
+Para um imóvel:
+
+```http
+GET /api/lances/historico/?imovel_id=1
+```
+
+Para um veículo:
+
+```http
+GET /api/lances/historico/?veiculo_id=1
+```
+
+O histórico apresenta os dados do produto e os lances correspondentes, ordenados pelo identificador do lance.
+
+## Executar verificações e testes
+
+Verifique a configuração do Django:
 
 ```bash
-python manage.py test
+docker compose exec backend python manage.py check
 ```
 
-O projeto possui 42 testes automatizados, aprovados na última execução.
+Execute os testes automatizados:
+
+```bash
+docker compose exec backend python manage.py test
+```
+
+Na última execução registrada, os **42 testes automatizados passaram**, sem falhas.
+
+Verifique o estado dos containers:
+
+```bash
+docker compose ps
+```
 
 ## Encerrar os serviços
 
-Para parar os containers sem remover os dados persistidos do banco:
+Para parar os containers sem remover o volume persistente do banco de dados:
 
 ```bash
 docker compose down
@@ -96,12 +152,10 @@ Para iniciar novamente:
 docker compose up -d
 ```
 
-## ObservaÃ§Ãµes
+## Observações de segurança
 
-As credenciais e configuraÃ§Ãµes definidas diretamente no arquivo `docker-compose.yml` sÃ£o destinadas ao ambiente local de desenvolvimento. Antes de utilizar a aplicaÃ§Ã£o em produÃ§Ã£o, configure senhas seguras, variÃ¡veis de ambiente e as opÃ§Ãµes de seguranÃ§a do Django.
+As configurações do ambiente local são destinadas ao desenvolvimento. Para produção, configure credenciais seguras por variáveis de ambiente, as opções de segurança do Django e um servidor WSGI ou ASGI apropriado.
 
-## RepositÃ³rio
+## Repositório
 
 https://github.com/julharoberta/YoutanLeiloes
-
-
