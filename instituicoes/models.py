@@ -17,18 +17,17 @@ class InstituicaoFinanceira(models.Model):
     def clean(self):
         super().clean()
 
+    
     def save(self, *args, **kwargs):
-        self.full_clean()
-        super().save(*args, **kwargs)    
+        self.cnpj = somente_digitos(self.cnpj)
 
-        documento = somente_digitos(self.cnpj)
-
-        if not cnpj_valido(documento):
+        if not cnpj_valido(self.cnpj):
             raise ValidationError({
                 "cnpj": "Informe um CNPJ válido."
             })
 
-        self.cnpj = documento
+        self.full_clean()
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = "Instituição financeira"
