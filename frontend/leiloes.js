@@ -129,10 +129,28 @@ function criarCardLeilao(leilao) {
             </div>
 
             <div class="leilao-informacoes">
-                <p>
-                    <strong>Instituição:</strong>
-                    ${escaparHTML(leilao.instituicao_financeira_nome || "Não informada")}
-                </p>
+               <div class="instituicao-detalhes">
+    <p>
+        <strong>Instituição:</strong>
+        ${escaparHTML(leilao.instituicao_financeira_nome || "Não informada")}
+    </p>
+    <p>
+        <strong>CNPJ:</strong>
+        ${escaparHTML(leilao.instituicao_financeira_cnpj || "Não informado")}
+    </p>
+    <p>
+        <strong>Telefone:</strong>
+        ${escaparHTML(leilao.instituicao_financeira_telefone || "Não informado")}
+    </p>
+    <p>
+        <strong>E-mail:</strong>
+        ${escaparHTML(leilao.instituicao_financeira_email || "Não informado")}
+    </p>
+    <p>
+        <strong>Endereço da instituição:</strong>
+        ${escaparHTML(leilao.instituicao_financeira_endereco || "Não informado")}
+    </p>
+</div>
 
                 <p>
                     <strong>Local:</strong>

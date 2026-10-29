@@ -101,6 +101,23 @@ class LeilaoConsultaSerializer(serializers.ModelSerializer):
         source="instituicao_financeira.nome",
         read_only=True,
     )
+    instituicao_financeira_cnpj = serializers.CharField(
+        source="instituicao_financeira.cnpj",
+        read_only=True,
+    )
+    instituicao_financeira_telefone = serializers.CharField(
+        source="instituicao_financeira.telefone",
+        read_only=True,
+    )
+    instituicao_financeira_email = serializers.CharField(
+        source="instituicao_financeira.email",
+        read_only=True,
+    )
+    instituicao_financeira_endereco = serializers.CharField(
+        source="instituicao_financeira.endereco",
+        read_only=True,
+    )
+
     imoveis = ImovelConsultaSerializer(many=True, read_only=True)
     veiculos = VeiculoConsultaSerializer(many=True, read_only=True)
 
@@ -116,6 +133,10 @@ class LeilaoConsultaSerializer(serializers.ModelSerializer):
             "cidade",
             "estado",
             "instituicao_financeira_nome",
+            "instituicao_financeira_cnpj",
+            "instituicao_financeira_telefone",
+            "instituicao_financeira_email",
+            "instituicao_financeira_endereco",
             "imoveis",
             "veiculos",
         ]
