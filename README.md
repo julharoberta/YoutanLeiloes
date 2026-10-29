@@ -1,5 +1,4 @@
-﻿$readme = @'
-# Youtan Leilões
+﻿# Youtan Leilões
 
 Sistema web para gerenciamento de leilões de imóveis e veículos, desenvolvido com Python, Django, Django REST Framework, PostgreSQL, HTML5, CSS3, Bootstrap, JavaScript, jQuery, Nginx e Docker Compose.
 
